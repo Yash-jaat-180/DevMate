@@ -213,31 +213,6 @@ Implementation Plan
         ↓
 Diff Viewer
 ```
-
----
-
-## 📸 Screenshots
-
-### Dashboard
-
-_Add screenshot here_
-
-### Repository Explorer
-
-_Add screenshot here_
-
-### AI Chat
-
-_Add screenshot here_
-
-### Feature Generator
-
-_Add screenshot here_
-
-### Diff Viewer
-
-_Add screenshot here_
-
 ---
 
 ## ⚡ Installation
