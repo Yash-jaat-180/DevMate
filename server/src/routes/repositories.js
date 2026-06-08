@@ -13,11 +13,15 @@ const router = Router();
 
 router.use(auth);
 
-router.post('/import', importRepository);
-router.get('/', getRepositories);
-router.get('/:id', getRepository);
-router.get('/:id/tree', getRepositoryTree);
-router.get('/:id/file', getRepositoryFile);
-router.delete('/:id', deleteRepository);
+// ✅ Static routes MUST come before parameterized /:id routes
+router.post('/import', importRepository);   // POST /api/repositories/import
+router.get('/',        getRepositories);     // GET  /api/repositories
+
+// Parameterized routes — always below static ones
+router.get('/:id',          getRepository);      // GET  /api/repositories/:id
+router.get('/:id/tree',     getRepositoryTree);  // GET  /api/repositories/:id/tree
+router.get('/:id/file',     getRepositoryFile);  // GET  /api/repositories/:id/file?path=
+router.delete('/:id',       deleteRepository);   // DELETE /api/repositories/:id
 
 export default router;
+

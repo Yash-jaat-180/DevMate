@@ -44,17 +44,32 @@ export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Please provide email and password.' });
+      return res.status(400).json({
+        message: 'Please provide email and password.',
+      });
     }
 
     const user = await User.findOne({ email }).select('+password');
+
+    console.log('User Found:', user);
+
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({
+        message: 'Invalid email or password.',
+      });
     }
 
+    console.log('Entered Password:', password);
+    console.log('Stored Hash:', user.password);
+
     const isMatch = await user.comparePassword(password);
+
+    console.log('Password Match:', isMatch);
+
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password.' });
+      return res.status(401).json({
+        message: 'Invalid email or password.',
+      });
     }
 
     const token = generateToken(user._id);
@@ -69,6 +84,7 @@ export const login = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error(error);
     next(error);
   }
 };

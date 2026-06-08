@@ -61,6 +61,15 @@ const repositorySchema = new mongoose.Schema({
     architectureOverview: { type: String, default: '' },
   },
 
+  // Source Code Cache — stored on import for offline AI context
+  // Stores content of up to 50 important files (max 3000 chars each)
+  contextFiles: [
+    {
+      path:    { type: String, required: true },
+      content: { type: String, default: '' },
+    },
+  ],
+
   importedAt: {
     type: Date,
     default: Date.now,
