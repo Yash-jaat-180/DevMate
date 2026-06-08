@@ -8,7 +8,7 @@ import {
   LuFolderGit2, LuFile, LuFolder, LuFolderOpen, LuChevronRight, LuChevronDown,
   LuLoader, LuBrain, LuWandSparkles, LuLightbulb, LuArrowLeft, LuStar,
   LuGitFork, LuSend, LuFileCode2, LuShield, LuZap, LuTrendingUp, LuRefreshCw,
-  LuCheckCircle2
+  LuCircleCheck
 } from 'react-icons/lu';
 
 /* ── helpers ─────────────────────────────────────── */
@@ -417,7 +417,7 @@ export default function RepositoryDetails() {
                       {featureResult.implementationPlan.steps?.map((step, i) => (
                         <div key={i} className="relative pl-6">
                           <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-surface-900 border-2 border-accent-500 flex items-center justify-center">
-                            <LuCheckCircle2 size={10} className="text-accent-500 hidden" />
+                            <LuCircleCheck size={10} className="text-accent-500 hidden" />
                           </div>
                           <p className="text-[13px] text-gray-300 leading-relaxed -mt-1">{step}</p>
                         </div>

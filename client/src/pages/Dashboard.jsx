@@ -12,17 +12,107 @@ import {
   LuZap,
   LuTrendingUp,
   LuClock,
+  LuWandSparkles,
 } from 'react-icons/lu';
+
+/* ─────────────────────────────────────────── */
+const S = {
+  /* section */
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '16px',
+  },
+  sectionTitle: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#f1f5f9',
+    letterSpacing: '-0.01em',
+  },
+  viewAll: {
+    fontSize: '12px',
+    color: '#6366f1',
+    textDecoration: 'none',
+    fontWeight: '500',
+  },
+  /* card */
+  card: {
+    background: '#111118',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '12px',
+  },
+  /* stat card */
+  statCard: {
+    background: '#111118',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '12px',
+    padding: '20px 24px',
+  },
+  statLabel: { fontSize: '12px', color: '#475569', fontWeight: '500', marginBottom: '10px' },
+  statValue: { fontSize: '28px', fontWeight: '700', color: '#f1f5f9', letterSpacing: '-0.03em' },
+  /* row item */
+  listItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    textDecoration: 'none',
+    transition: 'background 180ms',
+    cursor: 'pointer',
+  },
+  iconBox: (color = '#6366f1') => ({
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    background: `${color}18`,
+    border: `1px solid ${color}28`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  }),
+  /* action card */
+  actionCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '20px 24px',
+    background: '#111118',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: '12px',
+    textDecoration: 'none',
+    transition: 'border-color 200ms, background 200ms',
+    cursor: 'pointer',
+  },
+  actionIcon: (color = '#6366f1') => ({
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    background: `${color}18`,
+    border: `1px solid ${color}28`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  }),
+};
+
+const taskBadge = {
+  analysis:           { label: 'Analysis',    bg: 'rgba(59,130,246,0.12)',   color: '#93c5fd', border: 'rgba(59,130,246,0.25)' },
+  chat:               { label: 'Chat',        bg: 'rgba(139,92,246,0.12)',   color: '#c4b5fd', border: 'rgba(139,92,246,0.25)' },
+  suggestions:        { label: 'Suggestions', bg: 'rgba(245,158,11,0.12)',   color: '#fcd34d', border: 'rgba(245,158,11,0.25)' },
+  'feature-generation':{ label: 'Feature',   bg: 'rgba(16,185,129,0.12)',   color: '#6ee7b7', border: 'rgba(16,185,129,0.25)' },
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [repos, setRepos] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  const [repos, setRepos]   = useState([]);
+  const [tasks, setTasks]   = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  useEffect(() => { loadDashboard(); }, []);
 
   async function loadDashboard() {
     try {
@@ -39,202 +129,181 @@ export default function Dashboard() {
     }
   }
 
-  const stats = [
-    { label: 'Repositories', value: repos.length, icon: LuFolderGit2, color: '#6366f1' },
-    { label: 'AI Tasks', value: tasks.length, icon: LuBrain, color: '#8b5cf6' },
-    { label: 'Latest Activity', value: tasks[0] ? 'Today' : 'None', icon: LuTrendingUp, color: '#10b981' },
-  ];
-
-  const taskTypeLabels = {
-    analysis: 'Analysis',
-    chat: 'Chat',
-    suggestions: 'Suggestions',
-    'feature-generation': 'Feature Gen',
-  };
-
-  const taskTypeColors = {
-    analysis: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    chat: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    suggestions: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    'feature-generation': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  };
-
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="skeleton h-12 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => <div key={i} className="skeleton h-32 rounded-xl" />)}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <div className="skeleton" style={{ height: '40px', width: '220px' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '100px', borderRadius: '12px' }} />)}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="skeleton h-80 rounded-xl" />
-          <div className="skeleton h-80 rounded-xl" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="skeleton" style={{ height: '320px', borderRadius: '12px' }} />
+          <div className="skeleton" style={{ height: '320px', borderRadius: '12px' }} />
         </div>
       </div>
     );
   }
 
+  const stats = [
+    { label: 'Repositories',    value: repos.length,                           icon: LuFolderGit2, color: '#6366f1' },
+    { label: 'AI Tasks',        value: tasks.length,                           icon: LuBrain,      color: '#8b5cf6' },
+    { label: 'Latest Activity', value: tasks[0] ? new Date(tasks[0].createdAt).toLocaleDateString() : '—', icon: LuTrendingUp, color: '#10b981' },
+  ];
+
   return (
-    <div className="space-y-10 animate-fade-in pb-12">
-      {/* Header */}
-      <div className="border-b border-white/5 pb-6">
-        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
-          Overview
-        </h1>
-        <p className="text-gray-400 text-sm">
-          Welcome back, {user?.name?.split(' ')[0]}. Here's what's happening across your repositories.
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '40px', paddingBottom: '48px' }}>
+
+      {/* ── Page Header ── */}
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '24px' }}>
+        <h1 className="page-title" style={{ marginBottom: '6px' }}>Overview</h1>
+        <p style={{ fontSize: '13px', color: '#475569' }}>
+          Welcome back, <span style={{ color: '#94a3b8' }}>{user?.name?.split(' ')[0]}</span>. Here's your DevMate workspace at a glance.
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger-children">
-        {stats.map((stat) => (
-          <div key={stat.label} className="card p-6 hover:bg-white/[0.02] transition-colors duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-gray-400">{stat.label}</p>
-              <div
-                className="w-8 h-8 rounded-md flex items-center justify-center"
-                style={{ background: `${stat.color}15`, border: `1px solid ${stat.color}30` }}
-              >
-                <stat.icon size={16} style={{ color: stat.color }} />
+      {/* ── Stats ── */}
+      <div>
+        <p className="label" style={{ marginBottom: '12px' }}>At a Glance</p>
+        <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          {stats.map(stat => (
+            <div key={stat.label} style={S.statCard}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <p style={S.statLabel}>{stat.label}</p>
+                <div style={S.iconBox(stat.color)}>
+                  <stat.icon size={15} style={{ color: stat.color }} />
+                </div>
               </div>
+              <p style={S.statValue}>{stat.value}</p>
             </div>
-            <p className="text-3xl font-bold text-white tracking-tight">{stat.value}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Quick Actions */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-white tracking-tight">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link
-            to="/repositories"
-            className="group card p-6 hover:border-primary-500/50 transition-all duration-300 flex items-center gap-5"
-          >
-            <div className="w-12 h-12 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-500 group-hover:border-primary-400 transition-all">
-              <LuPlus className="text-primary-400 text-xl group-hover:text-white transition-colors" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-white font-medium mb-1">Import Repository</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Add a new GitHub repository for AI analysis.</p>
-            </div>
-            <LuArrowRight className="text-gray-600 group-hover:text-primary-400 transition-all group-hover:translate-x-1" />
-          </Link>
-
-          <Link
-            to="/chat"
-            className="group card p-6 hover:border-purple-500/50 transition-all duration-300 flex items-center gap-5"
-          >
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-500 group-hover:border-purple-400 transition-all">
-              <LuZap className="text-purple-400 text-xl group-hover:text-white transition-colors" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-white font-medium mb-1">AI Code Chat</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Ask questions or request features for your codebases.</p>
-            </div>
-            <LuArrowRight className="text-gray-600 group-hover:text-purple-400 transition-all group-hover:translate-x-1" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Main Grid: Repos & Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        
-        {/* Recent Repositories */}
-        <div className="card flex flex-col">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-white tracking-tight">Recent Repositories</h2>
-            <Link to="/repositories" className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors">
-              View all
+      {/* ── Quick Actions ── */}
+      <div>
+        <p className="label" style={{ marginBottom: '12px' }}>Quick Actions</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {[
+            { to: '/repositories', color: '#6366f1', icon: LuPlus, title: 'Import Repository', sub: 'Connect a new GitHub repo for AI analysis.' },
+            { to: '/chat',         color: '#8b5cf6', icon: LuZap,  title: 'AI Code Chat',       sub: 'Ask questions about any of your codebases.' },
+          ].map(a => (
+            <Link key={a.to} to={a.to} style={S.actionCard}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = `${a.color}50`; e.currentTarget.style.background = '#16161f'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = '#111118'; }}
+            >
+              <div style={S.actionIcon(a.color)}>
+                <a.icon size={18} style={{ color: a.color }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '13px', fontWeight: '600', color: '#f1f5f9', marginBottom: '3px' }}>{a.title}</p>
+                <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>{a.sub}</p>
+              </div>
+              <LuArrowRight size={15} style={{ color: '#334155', flexShrink: 0 }} />
             </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Repos + Tasks ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
+        {/* Recent Repositories */}
+        <div style={S.card}>
+          <div style={{ ...S.sectionHeader, padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 0 }}>
+            <span style={S.sectionTitle}>Recent Repositories</span>
+            <Link to="/repositories" style={S.viewAll}>View all →</Link>
           </div>
-          <div className="p-2 flex-1 flex flex-col">
+          <div style={{ padding: '8px' }}>
             {repos.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 rounded-full bg-surface-800 flex items-center justify-center mb-3">
-                  <LuFolderGit2 className="text-gray-500" size={20} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
+                <div style={{ ...S.iconBox('#6366f1'), width: '40px', height: '40px', marginBottom: '12px' }}>
+                  <LuFolderGit2 size={18} style={{ color: '#6366f1' }} />
                 </div>
-                <p className="text-gray-400 text-sm font-medium">No repositories yet</p>
-                <Link to="/repositories" className="text-primary-400 text-xs mt-2 hover:underline">
+                <p style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '500', marginBottom: '6px' }}>No repositories yet</p>
+                <Link to="/repositories" style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none' }}>
                   Import your first repo →
                 </Link>
               </div>
             ) : (
-              <div className="space-y-1">
-                {repos.slice(0, 5).map((repo) => (
-                  <Link
-                    key={repo._id}
-                    to={`/repositories/${repo._id}`}
-                    className="flex items-center gap-4 p-4 rounded-lg hover:bg-white/[0.03] transition-colors group"
-                  >
-                    <div className="w-8 h-8 rounded-md bg-surface-800 border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:border-primary-500/30 transition-colors">
-                      <LuFolderGit2 className="text-gray-400 group-hover:text-primary-400 transition-colors" size={14} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-200 truncate group-hover:text-white transition-colors">
-                        {repo.owner}/{repo.repoName}
+              repos.slice(0, 5).map(repo => (
+                <Link
+                  key={repo._id}
+                  to={`/repositories/${repo._id}`}
+                  style={S.listItem}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={S.iconBox('#6366f1')}>
+                    <LuFolderGit2 size={14} style={{ color: '#818cf8' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: '500', color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {repo.owner}/{repo.repoName}
+                    </p>
+                    {repo.language && (
+                      <p style={{ fontSize: '11px', color: '#475569', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#818cf8', display: 'inline-block' }} />
+                        {repo.language}
                       </p>
-                      {repo.language && (
-                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-primary-500/80" />
-                          {repo.language}
-                        </p>
-                      )}
-                    </div>
-                    <LuArrowRight className="text-gray-600 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" size={16} />
-                  </Link>
-                ))}
-              </div>
+                    )}
+                  </div>
+                  <LuArrowRight size={13} style={{ color: '#334155', flexShrink: 0 }} />
+                </Link>
+              ))
             )}
           </div>
         </div>
 
-        {/* Recent Tasks */}
-        <div className="card flex flex-col">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-white tracking-tight">Recent AI Activity</h2>
-            <Link to="/tasks" className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors">
-              View all
-            </Link>
+        {/* Recent AI Tasks */}
+        <div style={S.card}>
+          <div style={{ ...S.sectionHeader, padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 0 }}>
+            <span style={S.sectionTitle}>Recent AI Activity</span>
+            <Link to="/tasks" style={S.viewAll}>View all →</Link>
           </div>
-          <div className="p-2 flex-1 flex flex-col">
+          <div style={{ padding: '8px' }}>
             {tasks.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 rounded-full bg-surface-800 flex items-center justify-center mb-3">
-                  <LuHistory className="text-gray-500" size={20} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
+                <div style={{ ...S.iconBox('#8b5cf6'), width: '40px', height: '40px', marginBottom: '12px' }}>
+                  <LuHistory size={18} style={{ color: '#8b5cf6' }} />
                 </div>
-                <p className="text-gray-400 text-sm font-medium">No AI activity found</p>
-                <p className="text-gray-600 text-xs mt-1">Your AI interactions will appear here</p>
+                <p style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '500', marginBottom: '6px' }}>No AI activity yet</p>
+                <p style={{ fontSize: '12px', color: '#334155' }}>Your AI interactions will appear here</p>
               </div>
             ) : (
-              <div className="space-y-1">
-                {tasks.map((task) => (
+              tasks.map(task => {
+                const badge = taskBadge[task.taskType] || taskBadge.chat;
+                return (
                   <Link
                     key={task._id}
                     to={`/tasks/${task._id}`}
-                    className="flex items-center gap-4 p-4 rounded-lg hover:bg-white/[0.03] transition-colors group"
+                    style={S.listItem}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <div className="w-8 h-8 rounded-md bg-surface-800 border border-white/5 flex items-center justify-center flex-shrink-0">
-                      <LuBrain className="text-gray-400 group-hover:text-purple-400 transition-colors" size={14} />
+                    <div style={S.iconBox('#8b5cf6')}>
+                      <LuBrain size={14} style={{ color: '#a78bfa' }} />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-300 truncate group-hover:text-white transition-colors">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '13px', fontWeight: '500', color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '4px' }}>
                         {task.prompt}
                       </p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className={`text-[10px] font-medium uppercase tracking-wide px-2 py-0.5 rounded border ${taskTypeColors[task.taskType]}`}>
-                          {taskTypeLabels[task.taskType]}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                          fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em',
+                          padding: '2px 7px', borderRadius: '4px',
+                          background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`,
+                        }}>
+                          {badge.label}
                         </span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1.5">
+                        <span style={{ fontSize: '11px', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <LuClock size={10} />
                           {new Date(task.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
                   </Link>
-                ))}
-              </div>
+                );
+              })
             )}
           </div>
         </div>

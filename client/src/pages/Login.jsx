@@ -13,10 +13,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
+    if (!email || !password) { toast.error('Please fill in all fields'); return; }
     setLoading(true);
     try {
       await login(email, password);
@@ -24,57 +21,59 @@ export default function Login() {
       navigate('/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen bg-surface-950 flex items-center justify-center px-4">
-      {/* Ambient */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-primary-500/5 rounded-full blur-[100px]" />
+    <div style={{ minHeight: '100vh', background: '#050507', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      {/* Ambient glow */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '25%', left: '35%', width: '500px', height: '500px', background: 'rgba(99,102,241,0.05)', borderRadius: '50%', filter: 'blur(100px)' }} />
       </div>
 
-      <div className="w-full max-w-md relative z-10 animate-fade-in">
+      <div className="animate-fade-in" style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 10 }}>
         {/* Logo */}
-        <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-            <LuBrain className="text-white text-xl" />
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '36px', textDecoration: 'none' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LuBrain style={{ color: '#fff', fontSize: '18px' }} />
           </div>
-          <span className="text-2xl font-bold gradient-text">DevMate</span>
+          <span style={{ fontSize: '22px', fontWeight: '800', background: 'linear-gradient(135deg, #818cf8, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            DevMate
+          </span>
         </Link>
 
         {/* Card */}
-        <div className="rounded-2xl p-8 glass-strong">
-          <h2 className="text-2xl font-bold text-white mb-1">Welcome back</h2>
-          <p className="text-gray-400 text-sm mb-8">Sign in to your account to continue</p>
+        <div style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '36px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#f1f5f9', marginBottom: '6px', letterSpacing: '-0.02em' }}>Welcome back</h2>
+          <p style={{ fontSize: '13px', color: '#475569', marginBottom: '28px' }}>Sign in to your account to continue</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div>
-              <label className="text-sm font-medium text-gray-300 mb-1.5 block">Email</label>
-              <div className="relative">
-                <LuMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+              <div style={{ position: 'relative' }}>
+                <LuMail size={14} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' }} />
                 <input
+                  className="input"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
+                  style={{ paddingLeft: '38px' }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-300 mb-1.5 block">Password</label>
-              <div className="relative">
-                <LuLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <LuLock size={14} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' }} />
                 <input
+                  className="input"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
+                  style={{ paddingLeft: '38px' }}
                 />
               </div>
             </div>
@@ -82,26 +81,21 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg gradient-primary text-white font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '11px', fontSize: '14px', marginTop: '4px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
-              {loading ? (
-                <>
-                  <LuLoader className="animate-spin" size={16} /> Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
+              {loading ? <><LuLoader size={15} style={{ animation: 'spin 1s linear infinite' }} /> Signing in…</> : 'Sign in'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
+          <p style={{ textAlign: 'center', fontSize: '13px', color: '#475569', marginTop: '20px' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
-              Create one
-            </Link>
+            <Link to="/register" style={{ color: '#818cf8', fontWeight: '600', textDecoration: 'none' }}>Create one</Link>
           </p>
         </div>
       </div>
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

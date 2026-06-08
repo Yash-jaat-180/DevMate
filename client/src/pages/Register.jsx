@@ -14,14 +14,8 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+    if (!name || !email || !password) { toast.error('Please fill in all fields'); return; }
+    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setLoading(true);
     try {
       await register(name, email, password);
@@ -29,95 +23,74 @@ export default function Register() {
       navigate('/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
+  const fields = [
+    { label: 'Name',     icon: LuUser, type: 'text',     placeholder: 'Your name',          val: name,     set: setName },
+    { label: 'Email',    icon: LuMail, type: 'email',    placeholder: 'you@example.com',    val: email,    set: setEmail },
+    { label: 'Password', icon: LuLock, type: 'password', placeholder: 'Min 6 characters',   val: password, set: setPassword },
+  ];
+
   return (
-    <div className="min-h-screen bg-surface-950 flex items-center justify-center px-4">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 right-1/3 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-[100px]" />
+    <div style={{ minHeight: '100vh', background: '#050507', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '25%', right: '30%', width: '500px', height: '500px', background: 'rgba(139,92,246,0.05)', borderRadius: '50%', filter: 'blur(100px)' }} />
       </div>
 
-      <div className="w-full max-w-md relative z-10 animate-fade-in">
-        <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-            <LuBrain className="text-white text-xl" />
+      <div className="animate-fade-in" style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 10 }}>
+        {/* Logo */}
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '36px', textDecoration: 'none' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LuBrain style={{ color: '#fff', fontSize: '18px' }} />
           </div>
-          <span className="text-2xl font-bold gradient-text">DevMate</span>
+          <span style={{ fontSize: '22px', fontWeight: '800', background: 'linear-gradient(135deg, #818cf8, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            DevMate
+          </span>
         </Link>
 
-        <div className="rounded-2xl p-8 glass-strong">
-          <h2 className="text-2xl font-bold text-white mb-1">Create your account</h2>
-          <p className="text-gray-400 text-sm mb-8">Start analyzing repositories with AI</p>
+        <div style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '36px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#f1f5f9', marginBottom: '6px', letterSpacing: '-0.02em' }}>Create your account</h2>
+          <p style={{ fontSize: '13px', color: '#475569', marginBottom: '28px' }}>Start analyzing repositories with AI</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="text-sm font-medium text-gray-300 mb-1.5 block">Name</label>
-              <div className="relative">
-                <LuUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
-                />
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {fields.map(f => (
+              <div key={f.label}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#64748b', marginBottom: '7px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {f.label}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <f.icon size={14} style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: '#475569', pointerEvents: 'none' }} />
+                  <input
+                    className="input"
+                    type={f.type}
+                    value={f.val}
+                    onChange={e => f.set(e.target.value)}
+                    placeholder={f.placeholder}
+                    style={{ paddingLeft: '38px' }}
+                  />
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-300 mb-1.5 block">Email</label>
-              <div className="relative">
-                <LuMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-300 mb-1.5 block">Password</label>
-              <div className="relative">
-                <LuLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-all"
-                />
-              </div>
-            </div>
+            ))}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg gradient-primary text-white font-semibold text-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="btn btn-primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '11px', fontSize: '14px', marginTop: '4px', opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
-              {loading ? (
-                <>
-                  <LuLoader className="animate-spin" size={16} /> Creating account...
-                </>
-              ) : (
-                'Create Account'
-              )}
+              {loading ? <><LuLoader size={15} style={{ animation: 'spin 1s linear infinite' }} /> Creating account…</> : 'Create Account'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
+          <p style={{ textAlign: 'center', fontSize: '13px', color: '#475569', marginTop: '20px' }}>
             Already have an account?{' '}
-            <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
-              Sign in
-            </Link>
+            <Link to="/login" style={{ color: '#818cf8', fontWeight: '600', textDecoration: 'none' }}>Sign in</Link>
           </p>
         </div>
       </div>
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
