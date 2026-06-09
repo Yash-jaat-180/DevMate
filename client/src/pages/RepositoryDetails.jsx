@@ -8,7 +8,7 @@ import {
   LuFolderGit2, LuFile, LuFolder, LuFolderOpen, LuChevronRight, LuChevronDown,
   LuLoader, LuBrain, LuWandSparkles, LuLightbulb, LuArrowLeft, LuStar,
   LuGitFork, LuSend, LuFileCode2, LuShield, LuZap, LuTrendingUp, LuRefreshCw,
-  LuCircleCheck
+  LuCircleCheck, LuCode,
 } from 'react-icons/lu';
 
 /* ── helpers ─────────────────────────────────────── */

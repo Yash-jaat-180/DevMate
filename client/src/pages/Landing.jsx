@@ -1,98 +1,60 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LuBrain,
-  LuGitBranch,
-  LuCode,
-  LuMessageSquare,
-  LuWandSparkles,
-  LuShield,
-  LuArrowRight,
-  LuGithub,
-  LuZap,
-  LuLayers,
+  LuBrain, LuGitBranch, LuCode, LuMessageSquare,
+  LuWandSparkles, LuShield, LuArrowRight, LuGithub,
+  LuZap, LuLayers, LuStar, LuCheck,
 } from 'react-icons/lu';
 
 const features = [
-  {
-    icon: LuGitBranch,
-    title: 'Repository Import',
-    description: 'Import any GitHub repository and explore its structure in a VS Code-like interface.',
-    color: '#6366f1',
-  },
-  {
-    icon: LuBrain,
-    title: 'AI Analysis',
-    description: 'Get instant insights about architecture, tech stack, and code quality powered by Gemini.',
-    color: '#8b5cf6',
-  },
-  {
-    icon: LuMessageSquare,
-    title: 'Intelligent Chat',
-    description: 'Ask questions about any codebase and get context-aware answers with code references.',
-    color: '#a78bfa',
-  },
-  {
-    icon: LuWandSparkles,
-    title: 'Feature Generator',
-    description: 'Describe a feature in plain English and get implementation plans, code changes, and diffs.',
-    color: '#10b981',
-  },
-  {
-    icon: LuShield,
-    title: 'Code Improvements',
-    description: 'Receive categorized suggestions for performance, security, and code quality.',
-    color: '#f59e0b',
-  },
-  {
-    icon: LuCode,
-    title: 'Diff Viewer',
-    description: 'View generated code changes in a GitHub-style diff viewer with Monaco Editor.',
-    color: '#ef4444',
-  },
+  { icon: LuGitBranch,     title: 'Repository Import',   description: 'Import any GitHub repository instantly. Explore structure, files, and metadata in a clean interface.', color: '#6366f1' },
+  { icon: LuBrain,         title: 'AI Analysis',         description: 'Deep code review powered by Groq. Detects architecture, tech stack, and code quality issues.', color: '#8b5cf6' },
+  { icon: LuMessageSquare, title: 'Codebase Chat',       description: 'Ask anything about your code. Get grounded, citation-backed answers from actual source files.', color: '#a78bfa' },
+  { icon: LuWandSparkles,  title: 'Feature Generator',   description: 'Describe a feature in plain English. Get stack-aware implementation plans with actual code diffs.', color: '#10b981' },
+  { icon: LuShield,        title: 'Security Review',     description: 'Detect missing rate limiting, validation gaps, and security vulnerabilities in your codebase.', color: '#f59e0b' },
+  { icon: LuCode,          title: 'Diff Viewer',         description: 'Review AI-generated code changes in a GitHub-style diff viewer before applying them.', color: '#ef4444' },
+];
+
+const stats = [
+  { value: '50+', label: 'Files analyzed per repo' },
+  { value: '8',   label: 'AI review phases' },
+  { value: '< 30s', label: 'To first insight' },
 ];
 
 export default function Landing() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-surface-950 overflow-hidden">
-      {/* Ambient glow effects */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px]" />
+    <div style={{ minHeight: '100vh', background: 'var(--bg-page)', overflowX: 'hidden' }}>
+
+      {/* ── Ambient background ── */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: '900px', height: '600px', background: 'radial-gradient(ellipse, rgba(99,102,241,0.1) 0%, transparent 65%)', filter: 'blur(1px)' }} />
+        <div style={{ position: 'absolute', bottom: '5%', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%)' }} />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10">
-        <nav className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
-              <LuBrain className="text-white text-xl" />
+      {/* ── Header ── */}
+      <header style={{ position: 'relative', zIndex: 10 }}>
+        <nav style={{ maxWidth: '1100px', margin: '0 auto', padding: '20px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(99,102,241,0.35)' }}>
+              <LuBrain style={{ color: '#fff', fontSize: '16px' }} />
             </div>
-            <span className="text-xl font-bold gradient-text">DevMate</span>
+            <span style={{ fontSize: '17px', fontWeight: '800', background: 'linear-gradient(135deg, #818cf8, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              DevMate
+            </span>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {user ? (
-              <Link
-                to="/dashboard"
-                className="px-5 py-2.5 rounded-lg gradient-primary text-white text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                Dashboard
+              <Link to="/dashboard" className="btn btn-primary btn-sm">
+                Dashboard <LuArrowRight size={12} />
               </Link>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="px-5 py-2.5 rounded-lg text-gray-300 text-sm font-medium hover:text-white transition-colors"
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-5 py-2.5 rounded-lg gradient-primary text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-                >
-                  Get Started <LuArrowRight size={14} />
+                <Link to="/login" className="btn btn-ghost btn-sm">Sign in</Link>
+                <Link to="/register" className="btn btn-primary btn-sm">
+                  Get started <LuArrowRight size={12} />
                 </Link>
               </>
             )}
@@ -100,128 +62,166 @@ export default function Landing() {
         </nav>
       </header>
 
-      {/* Hero */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm font-medium mb-8 animate-fade-in">
-            <LuZap size={14} />
-            Powered by Google Gemini AI
+      {/* ── Hero ── */}
+      <section style={{ position: 'relative', zIndex: 10, maxWidth: '1100px', margin: '0 auto', padding: '72px 40px 96px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '760px', margin: '0 auto' }}>
+
+          <div className="hero-badge animate-fade-in" style={{ marginBottom: '28px' }}>
+            <LuZap size={12} />
+            Powered by Groq · Built for engineers
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight mb-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
-            Your AI-Powered{' '}
-            <span className="gradient-text">GitHub</span>{' '}
-            Code Assistant
+          <h1 className="animate-fade-in" style={{
+            fontSize: 'clamp(42px, 6vw, 76px)',
+            fontWeight: '900',
+            lineHeight: '1.06',
+            letterSpacing: '-0.04em',
+            color: 'var(--text-primary)',
+            marginBottom: '24px',
+            animationDelay: '80ms',
+          }}>
+            The AI that actually<br />
+            <span className="gradient-text">reads your code</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in" style={{ animationDelay: '200ms' }}>
-            Import repositories, analyze codebases, get improvement suggestions, and generate
-            code modifications — all from natural language instructions.
+          <p className="animate-fade-in" style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: '1.7', maxWidth: '560px', margin: '0 auto 40px', animationDelay: '160ms' }}>
+            Import any GitHub repository. DevMate analyzes real source files, detects your stack,
+            and gives you senior-engineer-grade insights — not generic checklists.
           </p>
 
-          <div className="flex items-center justify-center gap-4 animate-fade-in" style={{ animationDelay: '300ms' }}>
-            <Link
-              to={user ? '/dashboard' : '/register'}
-              className="px-8 py-3.5 rounded-xl gradient-primary text-white font-semibold hover:opacity-90 transition-all duration-200 glow flex items-center gap-2"
-            >
-              Start Building <LuArrowRight size={16} />
+          <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', animationDelay: '240ms' }}>
+            <Link to={user ? '/dashboard' : '/register'} className="btn btn-primary btn-xl">
+              Start for free <LuArrowRight size={16} />
             </Link>
             <a
               href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-semibold hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center gap-2"
+              target="_blank" rel="noopener noreferrer"
+              className="btn btn-secondary btn-xl"
             >
-              <LuGithub size={18} /> View on GitHub
+              <LuGithub size={17} /> View on GitHub
             </a>
+          </div>
+
+          {/* Social proof */}
+          <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '24px', animationDelay: '320ms' }}>
+            {[...Array(5)].map((_, i) => (
+              <LuStar key={i} size={13} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+            ))}
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '6px' }}>Trusted by developers</span>
           </div>
         </div>
 
-        {/* Mock terminal */}
-        <div className="mt-20 max-w-3xl mx-auto animate-fade-in" style={{ animationDelay: '400ms' }}>
-          <div className="rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-primary-500/5">
-            <div className="bg-surface-800 px-4 py-3 flex items-center gap-2 border-b border-white/5">
-              <div className="w-3 h-3 rounded-full bg-red-500/80" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              <span className="ml-3 text-xs text-gray-500 font-mono">devmate — ai assistant</span>
+        {/* Stats bar */}
+        <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0px', maxWidth: '560px', margin: '56px auto 0', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: '16px', overflow: 'hidden', animationDelay: '360ms' }}>
+          {stats.map((s, i) => (
+            <div key={i} style={{ flex: 1, padding: '20px 24px', textAlign: 'center', borderRight: i < stats.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+              <p style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.04em', lineHeight: 1 }}>{s.value}</p>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '5px', fontWeight: '500' }}>{s.label}</p>
             </div>
-            <div className="bg-surface-900 p-6 font-mono text-sm leading-loose">
-              <p className="text-gray-500">{">"} Import a repository</p>
-              <p className="text-primary-400 mt-1">✓ github.com/user/my-project imported</p>
-              <p className="text-gray-500 mt-3">{">"} Analyze the codebase</p>
-              <p className="text-accent-400 mt-1">✓ React + Express + MongoDB detected</p>
-              <p className="text-accent-400">✓ 47 components, 12 API routes found</p>
-              <p className="text-gray-500 mt-3">{">"} Add dark mode support</p>
-              <p className="text-purple-400 mt-1">⚡ Generated implementation plan</p>
-              <p className="text-purple-400">⚡ 4 files to modify, 1 file to create</p>
-              <p className="text-purple-400">⚡ Code diffs ready for review</p>
-              <span className="inline-block w-2 h-5 bg-primary-400 animate-pulse ml-1" />
+          ))}
+        </div>
+
+        {/* Terminal mockup */}
+        <div className="animate-fade-in" style={{ marginTop: '64px', maxWidth: '720px', margin: '64px auto 0', animationDelay: '400ms' }}>
+          <div className="terminal-window">
+            <div style={{ background: '#0d0d15', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#ef4444' }} />
+              <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#f59e0b' }} />
+              <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#10b981' }} />
+              <span style={{ marginLeft: '10px', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>devmate — ai assistant</span>
+            </div>
+            <div style={{ background: '#090910', padding: '28px 32px', fontFamily: 'ui-monospace, "Fira Code", monospace', fontSize: '13px', lineHeight: '1.9' }}>
+              <p style={{ color: 'var(--text-muted)' }}>$ devmate analyze github.com/acme/api</p>
+              <p style={{ color: '#6366f1', marginTop: '6px' }}>✓ Repository imported — 47 files, 12 routes</p>
+              <p style={{ color: '#10b981' }}>✓ Stack detected: Express + MongoDB + JWT + Cloudinary</p>
+              <p style={{ color: 'var(--text-muted)', marginTop: '12px' }}>$ devmate suggest improvements</p>
+              <p style={{ color: '#f59e0b', marginTop: '6px' }}>⚠ Rate limiting missing on POST /auth/login</p>
+              <p style={{ color: '#f59e0b' }}>⚠ No input validation in registerUser() · user.controller.js:47</p>
+              <p style={{ color: '#8b5cf6', marginTop: '12px' }}>⚡ Feature type: UI_FEATURE — backend-only repository detected</p>
+              <p style={{ color: '#8b5cf6' }}>⚡ Suggested: create separate frontend or add frontend capabilities</p>
+              <span style={{ display: 'inline-block', width: '8px', height: '16px', background: '#6366f1', marginLeft: '2px', animation: 'pulse-glow 1.2s ease-in-out infinite', borderRadius: '2px' }} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400 text-sm font-medium mb-4">
-            <LuLayers size={14} />
-            Features
+      {/* ── Features ── */}
+      <section style={{ position: 'relative', zIndex: 10, maxWidth: '1100px', margin: '0 auto', padding: '0 40px 96px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <div className="hero-badge" style={{ marginBottom: '20px' }}>
+            <LuLayers size={12} />
+            Capabilities
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Everything you need to understand code
+          <h2 style={{ fontSize: '38px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.035em', marginBottom: '14px' }}>
+            Everything you need to master a codebase
           </h2>
-          <p className="text-gray-400 max-w-xl mx-auto">
-            A complete toolkit for repository analysis and AI-assisted development.
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', lineHeight: '1.7' }}>
+            A complete AI toolkit that reads actual source code — not just summaries.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="group p-6 rounded-xl glass hover:bg-white/[0.04] transition-all duration-300 hover:-translate-y-1"
-            >
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
-                style={{ background: `${feature.color}15`, border: `1px solid ${feature.color}30` }}
-              >
-                <feature.icon size={22} style={{ color: feature.color }} />
+        <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          {features.map((f) => (
+            <div key={f.title} className="feature-card">
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: `${f.color}15`, border: `1px solid ${f.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px' }}>
+                <f.icon size={20} style={{ color: f.color }} />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '10px', letterSpacing: '-0.01em' }}>{f.title}</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.65' }}>{f.description}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 pb-20">
-        <div className="rounded-2xl p-12 text-center glass glow">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to analyze your codebase?</h2>
-          <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-            Import your first repository and experience AI-powered code analysis in seconds.
-          </p>
-          <Link
-            to={user ? '/repositories' : '/register'}
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl gradient-primary text-white font-semibold hover:opacity-90 transition-all duration-200"
-          >
-            Get Started Free <LuArrowRight size={16} />
-          </Link>
+      {/* ── CTA ── */}
+      <section style={{ position: 'relative', zIndex: 10, maxWidth: '1100px', margin: '0 auto', padding: '0 40px 80px' }}>
+        <div style={{
+          borderRadius: '24px',
+          padding: '72px 48px',
+          textAlign: 'center',
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 50%, rgba(99,102,241,0.05) 100%)',
+          border: '1px solid rgba(99,102,241,0.2)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h2 style={{ fontSize: '38px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.03em', marginBottom: '14px' }}>
+              Ready to understand your codebase?
+            </h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '36px', maxWidth: '440px', margin: '0 auto 36px', lineHeight: '1.7' }}>
+              Import your first repository and get AI-powered analysis in under 30 seconds.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '28px' }}>
+              <Link to={user ? '/repositories' : '/register'} className="btn btn-primary btn-xl">
+                Get started free <LuArrowRight size={16} />
+              </Link>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              {['No credit card required', 'Any GitHub repository', 'Free to start'].map(t => (
+                <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <LuCheck size={13} style={{ color: '#10b981' }} /> {t}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <LuBrain className="text-primary-400" />
-            <span className="text-sm text-gray-500">DevMate © {new Date().getFullYear()}</span>
+      {/* ── Footer ── */}
+      <footer style={{ position: 'relative', zIndex: 10, borderTop: '1px solid var(--border-subtle)', padding: '28px 40px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <LuBrain style={{ color: '#fff', fontSize: '11px' }} />
+            </div>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '500' }}>DevMate © {new Date().getFullYear()}</span>
           </div>
-          <p className="text-sm text-gray-600">Built with React, Express, Gemini AI</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Built with React · Express · Groq AI</p>
         </div>
       </footer>
+
+      <style>{`@keyframes pulse-glow { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }`}</style>
     </div>
   );
 }

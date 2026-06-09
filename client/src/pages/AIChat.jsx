@@ -48,7 +48,10 @@ export default function AIChat() {
     setLoading(true);
     try {
       const { data } = await aiService.chat(selectedRepo, prompt);
-      setMessages(m => [...m, { role: 'assistant', content: data.response }]);
+      // data.response is { answer, sources } — extract the answer string
+      const answer = data.response?.answer ?? data.response ?? 'No response received.';
+      const sources = data.response?.sources ?? [];
+      setMessages(m => [...m, { role: 'assistant', content: String(answer), sources }]);
     } catch {
       toast.error('Failed to get response');
       setMessages(m => [...m, { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }]);
@@ -153,8 +156,21 @@ export default function AIChat() {
               maxWidth: '100%',
             }}>
               <pre style={{ fontSize: '13px', color: '#e2e8f0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', lineHeight: '1.7', margin: 0 }}>
-                {msg.content}
+                {typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2)}
               </pre>
+              {/* Source file citations */}
+              {msg.sources?.filter(Boolean).length > 0 && (
+                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p style={{ fontSize: '10px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Sources</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    {msg.sources.filter(Boolean).map((src, i) => (
+                      <span key={i} style={{ fontSize: '11px', color: '#818cf8', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '4px', padding: '2px 8px', fontFamily: 'monospace' }}>
+                        {src}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
