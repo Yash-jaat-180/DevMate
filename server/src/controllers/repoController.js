@@ -257,3 +257,88 @@ export const deleteRepository = async (req, res, next) => {
     next(error);
   }
 };
+
+// POST /api/repositories/:id/refresh-cache
+// Re-fetches and stores contextFiles for an existing repository.
+// Use this for repos imported before the contextFiles feature was added.
+export const refreshRepositoryCache = async (req, res, next) => {
+  try {
+    if (!isValidId(req.params.id)) return res.status(400).json({ message: 'Invalid repository ID.' });
+
+    const repository = await Repository.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!repository) return res.status(404).json({ message: 'Repository not found.' });
+
+    const { owner, repoName: repo, defaultBranch: branch } = repository;
+    const tree = repository.structure || [];
+
+    const CACHE_PATTERNS = [
+      'package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml',
+      'tsconfig.json', 'vite.config.js', 'vite.config.ts',
+      'next.config.js', 'next.config.ts', 'next.config.mjs',
+      '.env.example', 'docker-compose.yml', 'dockerfile',
+      'server.js', 'server.ts', 'app.js', 'app.ts',
+      'src/index.js', 'src/index.ts', 'src/main.js', 'src/main.ts',
+      'src/app.js', 'src/app.ts', 'src/App.jsx', 'src/App.tsx',
+    ];
+
+    const CACHE_DIRS = [
+      'controllers', 'controller', 'routes', 'route',
+      'models', 'model', 'middlewares', 'middleware',
+      'services', 'service', 'utils', 'helpers', 'lib', 'config',
+      'src/controllers', 'src/routes', 'src/models',
+      'src/middlewares', 'src/services', 'src/utils',
+      'backend/controllers', 'backend/routes', 'backend/models',
+      'server/controllers', 'server/routes', 'server/models',
+    ];
+
+    const CODE_EXTS = new Set(['.js', '.ts', '.jsx', '.tsx', '.py', '.go', '.java', '.rb', '.php']);
+    const EXCLUDE   = ['node_modules', '.git', 'dist', 'build', '.next', 'vendor',
+                       'package-lock.json', 'yarn.lock', '.min.js', '.min.css'];
+
+    const existingPaths = new Set(tree.map(f => f.path));
+    const candidatePaths = new Set();
+
+    CACHE_PATTERNS.forEach(p => { if (existingPaths.has(p)) candidatePaths.add(p); });
+
+    for (const item of tree) {
+      if (item.type !== 'file') continue;
+      if (EXCLUDE.some(e => item.path.toLowerCase().includes(e))) continue;
+      const ext = '.' + item.path.split('.').pop().toLowerCase();
+      if (!CODE_EXTS.has(ext)) continue;
+      const lowerPath = item.path.toLowerCase();
+      if (CACHE_DIRS.some(dir => lowerPath.startsWith(dir + '/') || lowerPath.includes('/' + dir + '/'))) {
+        candidatePaths.add(item.path);
+      }
+    }
+
+    const pathsToFetch = [...candidatePaths].slice(0, 50);
+    console.log(`[RefreshCache] Fetching ${pathsToFetch.length} files for ${owner}/${repo}...`);
+
+    const fileResults = await Promise.allSettled(
+      pathsToFetch.map(path => githubService.getFileContent(owner, repo, path, branch || 'main'))
+    );
+
+    const MAX_CHARS = 3000;
+    const contextFiles = fileResults
+      .filter(r => r.status === 'fulfilled' && r.value?.content)
+      .map(r => ({
+        path:    r.value.path,
+        content: r.value.content.length > MAX_CHARS
+          ? r.value.content.slice(0, MAX_CHARS) + '\n// ... [truncated]'
+          : r.value.content,
+      }));
+
+    console.log(`[RefreshCache] Cached ${contextFiles.length} files`);
+
+    repository.contextFiles = contextFiles;
+    await repository.save();
+
+    res.json({
+      message: `Cache refreshed successfully. ${contextFiles.length} files stored.`,
+      fileCount: contextFiles.length,
+      files: contextFiles.map(f => f.path),
+    });
+  } catch (error) {
+    next(error);
+  }
+};

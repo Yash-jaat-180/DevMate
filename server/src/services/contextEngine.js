@@ -286,32 +286,51 @@ export function selectFilesFromCache(prompt, contextFiles = [], maxFiles = MAX_F
 
   console.log(`[Cache Retrieval] Query: "${prompt.slice(0, 80)}"`);
   console.log(`[Cache Retrieval] Keywords: ${keywords.slice(0, 10).join(', ')}`);
+  console.log(`[Cache Retrieval] Pool: ${contextFiles.length} cached files`);
+
+  // Diagnostic: log first file's raw structure to detect Mongoose subdoc issues
+  if (contextFiles[0]) {
+    const first = contextFiles[0];
+    const plain = first.toObject ? first.toObject() : first;
+    console.log(`[Cache Retrieval] First file → path:"${plain.path}" content:${plain.content?.length ?? 'n/a'} chars`);
+  }
 
   const scored = contextFiles.map(file => {
-    // ── Path-based score (same as selectRelevantFiles) ──
-    let score = scoreFile(file.path, keywords);
+    // ── Unwrap Mongoose subdocument if needed ──
+    // { ...mongooseDoc } silently drops getters, so path/content come out undefined.
+    // toObject() converts to a plain JS object with all enumerable properties.
+    const plain = (file && typeof file.toObject === 'function') ? file.toObject() : file;
+    const filePath    = plain.path    || '';
+    const fileContent = plain.content || '';
 
-    // ── Content-based score (unique to cache retrieval) ──
-    // Scan the actual source code for keyword matches
-    if (file.content) {
-      const contentLower = file.content.toLowerCase();
+    if (!filePath) {
+      console.warn('[Cache Retrieval] Skipping entry with no path');
+      return null; // will be filtered out
+    }
+
+    // ── Path-based score ──
+    let score = scoreFile(filePath, keywords);
+
+    // ── Content-based score — scan actual source code for keyword matches ──
+    if (fileContent) {
+      const contentLower = fileContent.toLowerCase();
       keywords.forEach(kw => {
-        // Count occurrences, capped to avoid over-weighting one keyword
-        const matches = (contentLower.match(new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
-        score += Math.min(matches * 3, 15); // up to 15 points per keyword from content
+        const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const matches  = (contentLower.match(new RegExp(escaped, 'g')) || []).length;
+        score += Math.min(matches * 3, 15);
       });
     }
 
-    return { ...file, score };
+    return { path: filePath, content: fileContent, score };
   });
 
   const selected = scored
-    .filter(f => f.score > -10)
+    .filter(f => f !== null && f.path && f.score > -10)
     .sort((a, b) => b.score - a.score)
     .slice(0, maxFiles);
 
-  console.log(`[Cache Retrieval] Selected ${selected.length}/${contextFiles.length} cached files:`);
-  selected.forEach(f => console.log(`  [score:${Math.round(f.score)}] ${f.path}`));
+  console.log(`[Cache Retrieval] Selected ${selected.length}/${contextFiles.length} files:`);
+  selected.forEach(f => console.log(`  [score:${Math.round(f.score)}] ${f.path} (${f.content.length} chars)`));
 
   return selected;
 }
