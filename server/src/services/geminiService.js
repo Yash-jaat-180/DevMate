@@ -236,49 +236,190 @@ Respond ONLY with valid JSON matching this exact structure (no markdown, no extr
  * @param {string} contextWindow - Source code context built by the context engine
  * @param {string[]} sourcePaths - Paths of the files included in the context
  */
-export async function chatAboutRepo(prompt, contextWindow, sourcePaths = []) {
+// ── Chat Mode Detection ────────────────────────────────────────────────────
+
+const FLOW_PATTERNS    = ['explain flow', 'walk me through', 'how does it work', 'lifecycle', 'step by step', 'request flow', 'data flow', 'explain the flow', 'what happens when', 'trace', 'end to end'];
+const INTERVIEW_PATTERNS = ['interview', 'interview question', 'explain for interview', 'what would interviewer', 'prepare for interview', 'commonly asked'];
+const ARCH_PATTERNS    = ['architecture', 'folder structure', 'project structure', 'how is it organized', 'explain the codebase', 'database design', 'system design', 'overall design'];
+
+function detectChatMode(prompt) {
+  const q = prompt.toLowerCase();
+  if (INTERVIEW_PATTERNS.some(p => q.includes(p))) return 'interview';
+  if (FLOW_PATTERNS.some(p => q.includes(p)))      return 'flow';
+  if (ARCH_PATTERNS.some(p => q.includes(p)))      return 'architecture';
+  return 'general';
+}
+
+// ── Mode-specific format instructions ─────────────────────────────────────
+
+const FORMAT_INSTRUCTIONS = {
+  flow: `
+## FLOW MODE — Answer as a numbered step-by-step flow:
+
+Format your answer like this:
+\`\`\`
+1. [Step Name]
+   → File: <file path>
+   → Function: <function name>
+   → What happens: <1-2 sentence explanation with code evidence>
+
+2. [Next Step]
+   → ...
+\`\`\`
+Connect each step to the next. Show the complete lifecycle.`,
+
+  interview: `
+## INTERVIEW MODE — Structure your answer for interview preparation:
+
+Use this format:
+**Concept**: What it is (1 sentence)
+**Implementation**: How this repo implements it (with file + function citations)
+**Code Evidence**: Paste 2-5 lines of actual code from context
+**Tradeoffs**: What this design gives up or gains
+**Follow-up Questions**: 3 likely interviewer follow-ups based on this code`,
+
+  architecture: `
+## ARCHITECTURE MODE — Give a structured architectural overview:
+
+Organize by layer:
+- **Entry Points**: (routes/index files)
+- **Middleware Layer**: (auth, validation, error handling)
+- **Business Logic**: (controllers/services)
+- **Data Layer**: (models/schemas)
+- **Utilities**: (helpers, config)
+
+For each layer, cite the actual files and their purpose.`,
+
+  general: `
+## EVIDENCE FORMAT — Every claim must be backed by code:
+
+Structure every explanation as:
+**[Topic]**: <What it does>
+→ \`<file path>\` — \`<function name>()\`
+→ Evidence: "<exact quote or paraphrase from source code>"
+
+Never make a claim without citing a specific file and function.`,
+};
+
+// ── Main Chat Function ─────────────────────────────────────────────────────
+
+export async function chatAboutRepo(prompt, contextWindow, sourcePaths = [], conversationHistory = [], chatOptions = {}) {
+  const mode = chatOptions.mode || detectChatMode(prompt);
+  const topic = chatOptions.topic || '';
+
   const fileList = sourcePaths.length > 0
-    ? `Files available in context:\n${sourcePaths.map(p => `- ${p}`).join('\n')}`
+    ? `Files in context:\n${sourcePaths.map(p => `  - ${p}`).join('\n')}`
     : 'No specific files were retrieved for this query.';
 
-  const systemPrompt = `You are DevMate — a code-aware AI assistant that answers questions about specific GitHub repositories.
+  const modeInstruction = FORMAT_INSTRUCTIONS[mode] || FORMAT_INSTRUCTIONS.general;
+  const topicHint = topic ? `\nCurrent conversation topic: **${topic}**` : '';
 
-## STRICT RULES — READ CAREFULLY:
+  const systemPrompt = `You are DevMate — an elite AI software engineer that analyzes real GitHub repositories and answers questions from the actual source code.
+${topicHint}
 
-1. GROUND TRUTH ONLY: Answer EXCLUSIVELY from the source code provided in the context.
-   Never invent functions, files, or implementations that are not shown.
+═══════════════════════════════════════════════════════════════
+ABSOLUTE RULES (never violate these):
+═══════════════════════════════════════════════════════════════
 
-2. ANTI-HALLUCINATION: If the context does not contain the answer, say:
-   "I cannot find [X] in the provided repository context. The relevant files may not have been retrieved."
-   Do NOT speculate with phrases like "likely", "probably", "we can assume", "might be".
+1. SOURCE CODE ONLY — Every answer must be grounded in the provided source code.
+   Never invent functions, routes, or logic not present in the context.
 
-3. CODE REFERENCES: Always reference the exact file path, function name, or line content from the context.
-   Example: "In \`src/middlewares/auth.js\`, the \`verifyToken\` function..."
+2. ZERO HALLUCINATION — If you cannot find the answer in the context:
+   Set "needsMoreContext": true and list the missing files in "missingFiles".
+   Do NOT guess. Do NOT use phrases like "likely", "probably", "typically".
 
-4. SOURCES: At the end of your answer, list only the files from the provided context that you actually cited.
+3. EXACT CITATIONS — Every claim must cite:
+   - The file path (e.g. \`src/middlewares/auth.middleware.js\`)
+   - The function name (e.g. \`verifyJWT()\`)
+   - A short evidence quote from the actual code
 
-5. FORMAT: Respond in markdown. Use code blocks for code snippets.
+4. CONVERSATION AWARENESS — You are in a multi-turn conversation.
+   If the question is a follow-up (e.g. "explain more", "why", "continue"),
+   continue from the previous topic WITHOUT asking the user to repeat context.
+
+5. CONFIDENCE SCORING — Rate your confidence 0–100 based on how much
+   of the answer is directly supported by retrieved source code:
+   - 90–100: All claims directly in context, multiple file citations
+   - 70–89:  Most claims in context, some inference required
+   - 50–69:  Partial context, some gaps
+   - Below 50: Insufficient context, flag needsMoreContext
+
+═══════════════════════════════════════════════════════════════
+${modeInstruction}
+═══════════════════════════════════════════════════════════════
 
 ${fileList}
 
-Respond with valid JSON:
+Return ONLY valid JSON in this exact shape:
 {
-  "answer": "Your markdown-formatted answer here, grounded in the provided source code",
-  "sources": ["src/path/to/file1.js", "src/path/to/file2.js"]
-}
+  "answer": "<markdown-formatted answer with file/function citations>",
+  "sources": ["path/to/file1.js", "path/to/file2.js"],
+  "confidence": <0-100>,
+  "mode": "${mode}",
+  "topic": "<inferred topic, e.g. Authentication, Upload, Subscriptions>",
+  "needsMoreContext": <true|false>,
+  "missingFiles": ["description of what file is missing, if needsMoreContext is true"]
+}`;
 
-The "sources" array must only contain paths that actually appear in the context above.`;
+  // Build multi-turn message array
+  const messages = [{ role: 'system', content: systemPrompt }];
 
-  const userPrompt = `## Repository Source Code Context\n${contextWindow}\n\n## User Question\n${prompt}`;
+  // Inject up to last 6 conversation turns (12 messages) for context
+  const recentHistory = conversationHistory.slice(-12);
+  for (const msg of recentHistory) {
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      messages.push({ role: msg.role, content: String(msg.content).slice(0, 2000) }); // cap old turns
+    }
+  }
+
+  // Current turn: code context + user question
+  messages.push({
+    role: 'user',
+    content: `## Repository Source Code\n${contextWindow}\n\n## Question\n${prompt}`,
+  });
+
+  const callGroq = async (jsonMode) => {
+    const groqClient = getClient();
+    console.log('[AI] Calling Groq... model:', MODEL, '| jsonMode:', jsonMode);
+    const opts = {
+      model: MODEL,
+      messages,
+      temperature: 0.2,
+      max_tokens: 3000,
+    };
+    if (jsonMode) opts.response_format = { type: 'json_object' };
+    const res = await groqClient.chat.completions.create(opts);
+    return res.choices[0]?.message?.content || '';
+  };
 
   try {
-    return await generateJSON(systemPrompt, userPrompt);
+    const text = await callGroq(true);
+    const parsed = JSON.parse(text);
+    // Ensure required fields exist
+    return {
+      answer:          parsed.answer          || 'No answer generated.',
+      sources:         Array.isArray(parsed.sources) ? parsed.sources : sourcePaths,
+      confidence:      typeof parsed.confidence === 'number' ? parsed.confidence : 70,
+      mode:            parsed.mode            || mode,
+      topic:           parsed.topic           || topic,
+      needsMoreContext: parsed.needsMoreContext || false,
+      missingFiles:    Array.isArray(parsed.missingFiles) ? parsed.missingFiles : [],
+    };
   } catch {
-    // Fallback: if JSON parsing fails, return structured object with raw text
-    const rawText = await generate(systemPrompt, userPrompt);
-    return { answer: rawText, sources: sourcePaths };
+    // JSON failed — plain text fallback
+    const rawText = await callGroq(false);
+    return {
+      answer:          rawText,
+      sources:         sourcePaths,
+      confidence:      50,
+      mode,
+      topic,
+      needsMoreContext: false,
+      missingFiles:    [],
+    };
   }
 }
+
 
 /**
  * Senior engineer code review — every suggestion must cite actual code evidence.

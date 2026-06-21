@@ -7,6 +7,10 @@ import {
   selectFilesFromCache,
   buildContextWindow,
   MAX_TOTAL_CONTEXT_CHARS,
+  isFollowUpQuery,
+  buildEnrichedQuery,
+  expandContextWithImports,
+  extractTopicFromQuery,
 } from '../services/contextEngine.js';
 
 const MAX_CONTEXT_CHARS = MAX_TOTAL_CONTEXT_CHARS;
@@ -300,44 +304,117 @@ export const analyzeRepository = async (req, res, next) => {
 // ── POST /api/ai/chat ───────────────────────────────────────
 export const chatAboutRepo = async (req, res, next) => {
   try {
-    const { repositoryId, prompt } = req.body;
+    const {
+      repositoryId,
+      prompt,
+      conversationHistory = [],
+      previousSources = [],
+      currentTopic = '',
+    } = req.body;
+
     if (!prompt)       return res.status(400).json({ message: 'Prompt is required.' });
     if (!repositoryId) return res.status(400).json({ message: 'repositoryId is required.' });
 
-    // Load repo WITH contextFiles (needed for cache-based retrieval)
     const repository = await Repository.findOne({ _id: repositoryId, userId: req.user._id });
     if (!repository)   return res.status(404).json({ message: 'Repository not found.' });
 
-    console.log(`\n[Chat] Query: "${prompt.slice(0, 80)}"`);
-    console.log(`[Chat] Repo: ${repository.owner}/${repository.repoName}`);
-    console.log(`[Chat] contextFiles in DB: ${(repository.contextFiles || []).length}`);
+    const chatStart = Date.now();
 
-    // Build context from cache (auto-populates if empty — transparent)
-    const { contextWindow, sourcePaths } = await buildContextFromCache(repository, prompt);
+    // ── Topic + Follow-up detection ──────────────────────────────
+    const previousQuery = conversationHistory.at(-2)?.content || null;
+    const isFollowUp    = isFollowUpQuery(prompt, previousQuery);
+    const topic         = extractTopicFromQuery(prompt, currentTopic);
+    const enrichedQuery = buildEnrichedQuery(prompt, previousQuery, previousSources);
 
-    let finalContext = contextWindow;
-    let finalSources = sourcePaths;
+    console.log(`\n${'═'.repeat(60)}`);
+    console.log(`[Chat] Query:      "${prompt.slice(0, 80)}"`);
+    console.log(`[Chat] Repo:       ${repository.owner}/${repository.repoName}`);
+    console.log(`[Chat] Topic:      ${topic || '(none)'}`);
+    console.log(`[Chat] Follow-up:  ${isFollowUp}`);
+    console.log(`[Chat] Prev files: ${previousSources.join(', ') || 'none'}`);
+    console.log(`[Chat] DB cache:   ${(repository.contextFiles || []).length} files`);
 
-    // Last-resort fallback: if auto-populate also failed, use live GitHub
-    if (!finalContext) {
-      console.log('[Chat] Cache unavailable — using live GitHub fetch as last resort...');
-      const liveResult = await buildContextFromGitHub(repository, prompt);
-      finalContext = liveResult.contextWindow;
-      finalSources = liveResult.sourcePaths;
+    // ── Phase 1: Retrieve files from cache ────────────────────────
+    let { contextWindow, sourcePaths } = await buildContextFromCache(repository, enrichedQuery);
+
+    // Rebuild file objects for multi-hop (we need content, not just paths)
+    let cachedFileObjects = (repository.contextFiles || []).map(f => {
+      const plain = f.toObject ? f.toObject() : f;
+      return { path: plain.path || '', content: plain.content || '' };
+    }).filter(f => f.path);
+
+    // Pin previous sources for follow-ups
+    if (isFollowUp && previousSources.length > 0) {
+      const pinned     = cachedFileObjects.filter(f => previousSources.includes(f.path));
+      const pinnedPaths = new Set(pinned.map(f => f.path));
+      const current    = cachedFileObjects.filter(f => sourcePaths.includes(f.path) && !pinnedPaths.has(f.path));
+      const merged     = [...pinned, ...current].slice(0, 5);
+
+      if (merged.length > 0) {
+        const repoMeta = `Repository: ${repository.owner}/${repository.repoName}\nLanguage: ${repository.language || 'Unknown'}\n`;
+        contextWindow  = buildContextWindow(merged, repository.summary, repoMeta);
+        sourcePaths    = merged.map(f => f.path);
+        cachedFileObjects = merged; // use merged for multi-hop base
+        console.log(`[Chat] Pinned ${pinned.length} prev + ${current.length} new files`);
+      }
     }
 
-    console.log('[AI] Calling Groq for chat response...');
-    const aiResult = await geminiService.chatAboutRepo(prompt, finalContext, finalSources);
+    // Last-resort: live GitHub fetch
+    if (!contextWindow) {
+      console.log('[Chat] Cache empty — falling back to live GitHub fetch...');
+      const live  = await buildContextFromGitHub(repository, enrichedQuery);
+      contextWindow = live.contextWindow;
+      sourcePaths   = live.sourcePaths;
+    }
+
+    // ── Phase 2: Multi-hop import expansion ─────────────────────
+    const retrievedFileObjects = cachedFileObjects.filter(f => sourcePaths.includes(f.path));
+    const allCached = (repository.contextFiles || []).map(f => {
+      const plain = f.toObject ? f.toObject() : f;
+      return { path: plain.path || '', content: plain.content || '' };
+    }).filter(f => f.path);
+
+    const expandedFiles = expandContextWithImports(retrievedFileObjects, allCached, 3);
+    if (expandedFiles.length > retrievedFileObjects.length) {
+      const repoMeta  = `Repository: ${repository.owner}/${repository.repoName}\nLanguage: ${repository.language || 'Unknown'}\n`;
+      contextWindow   = buildContextWindow(expandedFiles, repository.summary, repoMeta);
+      sourcePaths     = expandedFiles.map(f => f.path);
+    }
+
+    console.log(`[Chat] Final files (${sourcePaths.length}): ${sourcePaths.join(', ')}`);
+
+    // ── Phase 3: AI call with topic + mode ──────────────────────
+    const aiResult = await geminiService.chatAboutRepo(
+      prompt, contextWindow, sourcePaths, conversationHistory,
+      { topic }
+    );
 
     const response = {
-      answer:  aiResult.answer  || aiResult,
-      sources: aiResult.sources?.length ? aiResult.sources : finalSources,
+      answer:          aiResult.answer          || aiResult,
+      sources:         aiResult.sources?.length ? aiResult.sources : sourcePaths,
+      confidence:      aiResult.confidence      ?? 70,
+      mode:            aiResult.mode            || 'general',
+      topic:           aiResult.topic           || topic,
+      needsMoreContext: aiResult.needsMoreContext || false,
+      missingFiles:    aiResult.missingFiles     || [],
     };
 
+    // ── Metrics log ─────────────────────────────────────────
+    const elapsed = Date.now() - chatStart;
+    console.log(`[Chat] ── Metrics ──`);
+    console.log(`  Mode:        ${response.mode}`);
+    console.log(`  Topic:       ${response.topic}`);
+    console.log(`  Confidence:  ${response.confidence}%`);
+    console.log(`  Files used:  ${sourcePaths.length}`);
+    console.log(`  Follow-up:   ${isFollowUp}`);
+    console.log(`  Needs more:  ${response.needsMoreContext}`);
+    console.log(`  Elapsed:     ${elapsed}ms`);
+    console.log('═'.repeat(60));
+
     const task = await Task.create({
-      userId: req.user._id,
+      userId:       req.user._id,
       repositoryId: repository._id,
-      taskType: 'chat',
+      taskType:     'chat',
       prompt,
       response,
     });

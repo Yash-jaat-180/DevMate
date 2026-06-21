@@ -23,13 +23,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || '';
+    const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+
+    // Only redirect to login when a protected (non-auth) request gets a 401.
+    // If the login/register call itself returns 401 (wrong credentials), let the
+    // component's catch block handle it and show the error message.
+    if (error.response?.status === 401 && !isAuthRequest) {
       localStorage.removeItem('devmate_token');
       localStorage.removeItem('devmate_user');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );
+
 
 export default api;

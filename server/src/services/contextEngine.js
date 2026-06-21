@@ -336,3 +336,149 @@ export function selectFilesFromCache(prompt, contextFiles = [], maxFiles = MAX_F
 }
 
 export { extractKeywords, MAX_FILES_FOR_ANALYSIS, MAX_CHARS_PER_FILE, MAX_TOTAL_CONTEXT_CHARS };
+
+// ── Follow-Up Detection ─────────────────────────────────────
+
+const FOLLOWUP_SIGNALS = [
+  'continue', 'explain more', 'tell me more', 'go on', 'elaborate',
+  'in detail', 'in more detail', 'more detail', 'explain this',
+  'explain the flow', 'walk me through', 'how does this work',
+  'then what', 'what happens next', 'what about', 'and then',
+  'why', 'how', 'what is this', 'what does this do',
+  'can you explain', 'can you elaborate', 'show me',
+];
+
+export function isFollowUpQuery(query, previousQuery) {
+  if (!previousQuery) return false;
+  const q = query.trim().toLowerCase();
+  if (q.split(/\s+/).length <= 4) return true;
+  if (FOLLOWUP_SIGNALS.some(sig => q.includes(sig))) return true;
+  return false;
+}
+
+export function buildEnrichedQuery(currentQuery, previousQuery, previousSources) {
+  const parts = [currentQuery];
+  if (previousQuery) parts.push(previousQuery);
+  if (previousSources?.length) {
+    const fileHints = previousSources
+      .map(p => p.split('/').pop().replace(/\.\w+$/, '').replace(/[._-]/g, ' '))
+      .join(' ');
+    parts.push(fileHints);
+  }
+  return parts.join(' ');
+}
+
+// ── Multi-Hop Import Expansion (Phase 2) ─────────────────────────────────────
+
+/**
+ * Parse all import/require paths from a JS/TS file's content.
+ * Handles both ESM (import ... from '...') and CJS (require('...')) syntax.
+ */
+function parseImports(content) {
+  const paths = new Set();
+  // ESM: import ... from './path' or import './path'
+  const esmMatches = content.matchAll(/from\s+['"]([^'"]+)['"]/g);
+  for (const m of esmMatches) paths.add(m[1]);
+  // CJS: require('./path')
+  const cjsMatches = content.matchAll(/require\s*\(\s*['"]([^'"]+)['"]\s*\)/g);
+  for (const m of cjsMatches) paths.add(m[1]);
+  return [...paths].filter(p => p.startsWith('.') || p.startsWith('/')); // local only
+}
+
+/**
+ * Resolve a relative import path from a source file to a normalized project path.
+ * e.g. "src/controllers/user.controller.js" + "../models/user.model" → "src/models/user.model.js"
+ */
+function resolveImport(sourceFilePath, importPath) {
+  // Build base dir of source file
+  const parts = sourceFilePath.split('/');
+  parts.pop(); // remove filename
+  const base = parts;
+
+  // Resolve relative segments
+  const segments = importPath.split('/');
+  for (const seg of segments) {
+    if (seg === '..') base.pop();
+    else if (seg !== '.') base.push(seg);
+  }
+  return base.join('/');
+}
+
+/**
+ * Given a set of already-retrieved files, find their import dependencies
+ * inside the full cache and add them (up to maxHops depth, maxExtra files).
+ *
+ * @param {Array<{path,content}>} retrievedFiles - files already in context
+ * @param {Array<{path,content}>} allCachedFiles - full repository cache
+ * @param {number} maxExtra - max additional files to add
+ * @returns {Array<{path,content}>} expanded file list (retrieved + dependencies)
+ */
+export function expandContextWithImports(retrievedFiles, allCachedFiles, maxExtra = 3) {
+  const alreadyIncluded = new Set(retrievedFiles.map(f => f.path));
+  const cacheByNorm     = new Map(); // normalizedPath → file
+
+  // Index cache by multiple path variants for fuzzy matching
+  for (const f of allCachedFiles) {
+    const norm = f.path.toLowerCase().replace(/\.(js|ts|jsx|tsx)$/, '');
+    cacheByNorm.set(norm, f);
+    // Also index by basename
+    const base = f.path.split('/').pop().replace(/\.(js|ts|jsx|tsx)$/, '').toLowerCase();
+    if (!cacheByNorm.has(base)) cacheByNorm.set(base, f);
+  }
+
+  const toAdd = [];
+
+  for (const file of retrievedFiles) {
+    if (toAdd.length >= maxExtra) break;
+    const imports = parseImports(file.content);
+
+    for (const imp of imports) {
+      if (toAdd.length >= maxExtra) break;
+
+      const resolved    = resolveImport(file.path, imp).toLowerCase().replace(/\.(js|ts|jsx|tsx)$/, '');
+      const baseName    = imp.split('/').pop().replace(/\.(js|ts|jsx|tsx)$/, '').toLowerCase();
+
+      const dep = cacheByNorm.get(resolved) || cacheByNorm.get(baseName);
+      if (dep && !alreadyIncluded.has(dep.path)) {
+        toAdd.push(dep);
+        alreadyIncluded.add(dep.path);
+        console.log(`  [MultiHop] ${file.path} → ${dep.path}`);
+      }
+    }
+  }
+
+  if (toAdd.length > 0) {
+    console.log(`[MultiHop] Added ${toAdd.length} dependency files via import expansion`);
+  }
+
+  return [...retrievedFiles, ...toAdd];
+}
+
+// ── Topic Extraction ────────────────────────────────────────────────────────
+
+const TOPIC_KEYWORDS = {
+  'Authentication':  ['auth', 'login', 'register', 'jwt', 'token', 'password', 'session', 'cookie', 'middleware'],
+  'Video Upload':    ['upload', 'video', 'multer', 'cloudinary', 'file', 'stream', 'media'],
+  'Subscriptions':   ['subscribe', 'subscription', 'channel', 'follower', 'follow'],
+  'Playlist':        ['playlist', 'playlists', 'addvideo', 'createplaylist'],
+  'Comments':        ['comment', 'comments', 'addcomment', 'deletecomment'],
+  'Likes':           ['like', 'likes', 'togglelike', 'likedvideos'],
+  'Dashboard':       ['dashboard', 'stats', 'analytics', 'views', 'metrics'],
+  'Search':          ['search', 'query', 'filter', 'aggregation', 'pipeline'],
+  'User Profile':    ['profile', 'avatar', 'coverimage', 'updateuser', 'changepassword'],
+  'Database':        ['model', 'schema', 'mongoose', 'mongodb', 'aggregat', 'index'],
+  'API Routes':      ['route', 'router', 'endpoint', 'api', 'controller'],
+  'Error Handling':  ['error', 'apierror', 'trycatch', 'asynchandler', 'middleware'],
+};
+
+/**
+ * Infer the current conversation topic from a message and prior topic.
+ * Returns the topic string (e.g. "Authentication") or the previous topic if no new one found.
+ */
+export function extractTopicFromQuery(query, previousTopic = '') {
+  const q = query.toLowerCase();
+  for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
+    if (keywords.some(kw => q.includes(kw))) return topic;
+  }
+  return previousTopic; // stick with previous if follow-up has no new keywords
+}

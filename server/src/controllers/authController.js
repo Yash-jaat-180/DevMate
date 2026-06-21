@@ -45,36 +45,33 @@ export const login = async (req, res, next) => {
 
     if (!email || !password) {
       return res.status(400).json({
-        message: 'Please provide email and password.',
+        success: false,
+        message: 'Email and password are required',
       });
     }
 
     const user = await User.findOne({ email }).select('+password');
 
-    console.log('User Found:', user);
-
     if (!user) {
       return res.status(401).json({
-        message: 'Invalid email or password.',
+        success: false,
+        message: 'User with this email does not exist',
       });
     }
 
-    console.log('Entered Password:', password);
-    console.log('Stored Hash:', user.password);
-
     const isMatch = await user.comparePassword(password);
-
-    console.log('Password Match:', isMatch);
 
     if (!isMatch) {
       return res.status(401).json({
-        message: 'Invalid email or password.',
+        success: false,
+        message: 'Incorrect password',
       });
     }
 
     const token = generateToken(user._id);
 
     res.json({
+      success: true,
       token,
       user: {
         id: user._id,
