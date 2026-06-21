@@ -21,10 +21,22 @@ const PORT = process.env.PORT || 5000;
 // Connect to database
 connectDB();
 
-// Middleware
+// Allowed origins: comma-separated list in CLIENT_URL env var, plus localhost fallback
+const ALLOWED_ORIGINS = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no origin) and whitelisted origins
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
   credentials: true,
 }));
 app.use(morgan('dev'));
